@@ -112,13 +112,19 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
     printf("HOST_USER_CLASS_ACTIVE -> APPLICATION_READY\n");
   break;
 
+  case HOST_USER_CLASS_SELECTED:
+    //Appli_state = APPLICATION_READY;
+    printf("HOST_USER_CLASS_SELECTED ...\n");
+  break;
+
   case HOST_USER_CONNECTION:
     Appli_state = APPLICATION_START;
     printf("HOST_USER_CONNECTION -> APPLICATION_START\n");
   break;
 
   default:
-  break; 
+    printf("Unhandled id in USBH_UserProcess() usb_host.c\n");
+  break;
   }
   /* USER CODE END 2 */
 }
