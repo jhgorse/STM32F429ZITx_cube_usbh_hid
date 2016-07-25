@@ -57,7 +57,13 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id);
 * -- Insert your external function declaration here --
 */ 
 /* USER CODE BEGIN 1 */
+void USBH_HID_EventCallback(USBH_HandleTypeDef *phost);
 
+void USBH_HID_EventCallback(USBH_HandleTypeDef *phost) {
+  HID_KEYBD_Info_TypeDef *kbdInfo;
+  kbdInfo = USBH_HID_GetKeybdInfo (phost);
+  printf ("Keyboard key: %c\n", USBH_HID_GetASCIICode(kbdInfo));
+}
 /* USER CODE END 1 */
 
 /* init function */				        
