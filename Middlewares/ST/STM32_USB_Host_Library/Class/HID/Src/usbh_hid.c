@@ -201,7 +201,8 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit (USBH_HandleTypeDef *phost)
               phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bNumEndpoints :
                   USBH_MAX_NUM_ENDPOINTS); 
     
-    
+    USBH_UsrLog("max_ep: %u", max_ep );
+
     /* Decode endpoint IN and OUT address from interface descriptor */
     for ( ;num < max_ep; num++)
     {
@@ -220,6 +221,9 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit (USBH_HandleTypeDef *phost)
                         USB_EP_TYPE_INTR,
                         HID_Handle->length); 
         
+        USBH_UsrLog("Open IN interrupt pipe: 0x%x Ep: 0x%xh dev.addr: 0x%x dev.speed: 0x%x len: 0x%x",
+            HID_Handle->InPipe, HID_Handle->InEp, phost->device.address, phost->device.speed, HID_Handle->length );
+
         USBH_LL_SetToggle (phost, HID_Handle->InPipe, 0);
         
       }
@@ -237,7 +241,10 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit (USBH_HandleTypeDef *phost)
                         phost->device.speed,
                         USB_EP_TYPE_INTR,
                         HID_Handle->length); 
-        
+
+        USBH_UsrLog("Open OUT interrupt pipe: 0x%x Ep: 0x%xh dev.addr: 0x%x dev.speed: 0x%x len: 0x%x",
+            HID_Handle->OutPipe, HID_Handle->OutEp, phost->device.address, phost->device.speed, HID_Handle->length );
+
         USBH_LL_SetToggle (phost, HID_Handle->OutPipe, 0);        
       }
       
@@ -315,7 +322,7 @@ static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost)
     if (USBH_HID_GetHIDReportDescriptor(phost, HID_Handle->HID_Desc.wItemLength) == USBH_OK)
     {
       /* The descriptor is available in phost->device.Data */
-
+      printf ("Report Descriptor Parse Here\n");
       HID_Handle->ctl_state = HID_REQ_SET_IDLE;
     }
     
