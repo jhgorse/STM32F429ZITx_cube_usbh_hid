@@ -378,24 +378,26 @@ static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost)
   */
 static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 {
+
   USBH_StatusTypeDef status = USBH_OK;
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
+  USBH_URBStateTypeDef urb_state;
   
   switch (HID_Handle->state)
   {
   case HID_INIT:
     HID_Handle->Init(phost); 
   case HID_IDLE:
-    if(USBH_HID_GetReport (phost,
-                           0x01,
-                            0,
-                            HID_Handle->pData,
-                            HID_Handle->length) == USBH_OK)
-    {
+//    if(USBH_HID_GetReport (phost,
+//                           0x01, // Type
+//                            0,   // Id
+//                            HID_Handle->pData,
+//                            HID_Handle->length) == USBH_OK)
+//    {
       
-      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);  
+//      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
       HID_Handle->state = HID_SYNC;
-    }
+//    }
     
     break;
     
@@ -429,7 +431,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     {
       if(HID_Handle->DataReady == 0)
       {
-        fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
+//        fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
         HID_Handle->DataReady = 1;
         USBH_HID_EventCallback(phost);
 #if (USBH_USE_OS == 1)
