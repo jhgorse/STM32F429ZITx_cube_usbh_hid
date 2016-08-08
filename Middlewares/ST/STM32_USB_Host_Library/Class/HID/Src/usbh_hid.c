@@ -88,7 +88,7 @@
 /** @defgroup USBH_HID_CORE_Private_Variables
 * @{
 */
-
+uint8_t send_report_buff[61];
 /**
 * @}
 */ 
@@ -141,6 +141,8 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit (USBH_HandleTypeDef *phost)
   uint8_t num = 0;
   uint8_t interface;
   
+  memset(send_report_buff, 0, sizeof(send_report_buff));
+
   USBH_StatusTypeDef status = USBH_FAIL ;
   HID_HandleTypeDef *HID_Handle;
   
@@ -363,6 +365,12 @@ static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost)
     break;
     
   case HID_REQ_IDLE:
+    // TODO: Handle the Report device
+    // FYI, it never gets here
+    printf("%s:%d %s(HID_Handle->ctl_state == HID_REQ_IDLE)\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+    // Consider sending to HID_REQ_GET_HID_DESC, HID_REQ_GET_REPORT_DESC
+    // Also consider creating a HID_REQ_GET_HID_DESC
+    break;
   default:
     break;
   }
@@ -450,10 +458,51 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
         HID_Handle->state = HID_GET_DATA;
       }
     } 
-    
-
     break;
+
+  case HID_SEND_DATA:
+    // TODO: HID_SEND_DATA needs entry and implementation and exit states
+    // data should point to 61 byte buffer, 02 01 00 00 00 ...
+    urb_state = USBH_URB_NYET;
+    send_report_buff[0] = 2;
+    send_report_buff[1] = 1;
+//    HID_Handle->pData = send_report_buff;
+//    HID_Handle->length = sizeof(send_report_buff);
+
+//    USBH_HID_SetReport();
+    USBH_InterruptSendData( phost,
+                            send_report_buff,
+                            sizeof(send_report_buff),
+                            HID_Handle->OutPipe);
+    do {
+      urb_state = USBH_LL_GetURBState(phost , HID_Handle->OutPipe);
+      switch (urb_state)
+      {
+      case USBH_URB_IDLE:
+        printf("%s:%d %s(HID_SEND_DATA), URB IDLE\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+        break;
+      case USBH_URB_DONE:
+        printf("%s:%d %s(HID_SEND_DATA), URB DONE\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+        break;
+      case USBH_URB_NOTREADY:
+        printf("%s:%d %s(HID_SEND_DATA), URB NOTREADY\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+        break;
+      case USBH_URB_NYET:
+        printf("%s:%d %s(HID_SEND_DATA), URB NYET\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+        break;
+      case USBH_URB_ERROR:
+        printf("%s:%d %s(HID_SEND_DATA), URB ERROR\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+        break;
+      case USBH_URB_STALL:
+        printf("%s:%d %s(HID_SEND_DATA), URB STALL\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+        break;
+      }
+    } while ( urb_state != USBH_URB_DONE);
     
+    HID_Handle->state = HID_POLL;
+//    HID_Handle->timer = phost->Timer;
+//    HID_Handle->DataReady = 0;
+    break;
   default:
     break;
   }
