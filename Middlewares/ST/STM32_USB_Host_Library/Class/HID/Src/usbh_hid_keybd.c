@@ -95,8 +95,66 @@ static USBH_StatusTypeDef USBH_HID_KeybdDecode(USBH_HandleTypeDef *phost);
 * @{
 */
 
-HID_KEYBD_Info_TypeDef     keybd_info;
-uint32_t                   keybd_report_data[2];
+HID_KEYBD_Info_TypeDef    keybd_info;
+uint8_t                   keybd_report_data[61];
+
+
+#define HID_REPORT_DESCRIPTOR_SIZE 0x0044
+#define HID_REPORT_DESCRIPTOR_SIZE_LE 0x4400
+typedef unsigned char hid_report_descriptor[HID_REPORT_DESCRIPTOR_SIZE]; // Irradiance
+
+const hid_report_descriptor HIDREPORTDESC = {
+    0x06, 0x00, 0xff,              // USAGE_PAGE (Vendor Defined Page 1)
+    0x09, 0x01,                    // USAGE (Vendor Usage 1)
+    0xa1, 0x01,                    // COLLECTION (Application)
+
+#define IN_CONTROL 0xFE
+#define IN_CONTROL_SIZE 8
+
+    0x85, IN_CONTROL,              // Report ID
+    0x95, IN_CONTROL_SIZE,         //   REPORT_COUNT ()
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x09, 0x01,                    //   USAGE (Vendor Usage 1)
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+
+#define OUT_CONTROL 0xFD
+#define OUT_CONTROL_SIZE 8
+
+    0x85, OUT_CONTROL,             // Report ID
+    0x95, OUT_CONTROL_SIZE,        //   REPORT_COUNT ()
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x09, 0x01,                    //   USAGE (Vendor Usage 1)
+    0x91, 0x02,                    //   OUTPUT (Data,Var,Abs)
+
+#define IN_DATA  0x01
+#define IN_DATA_SIZE 60
+
+
+    0x85, IN_DATA,                 // Report ID
+    0x95, IN_DATA_SIZE,            //   REPORT_COUNT ()
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x09, 0x01,                    //   USAGE (Vendor Usage 1)
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+
+#define OUT_DATA 0x02
+#define OUT_DATA_SIZE 60
+
+    0x85, OUT_DATA,                // Report ID
+    0x95, OUT_DATA_SIZE,           //   REPORT_COUNT ()
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x09, 0x01,                    //   USAGE (Vendor Usage 1)
+    0x91, 0x02,                    //   OUTPUT (Data,Var,Abs)
+
+    0xC0                           //   end Application Collection
+};
 
 static const HID_Report_ItemTypedef imp_0_lctrl={
   (uint8_t*)keybd_report_data+0, /*data*/
