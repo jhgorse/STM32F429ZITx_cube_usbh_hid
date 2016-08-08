@@ -161,7 +161,7 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit (USBH_HandleTypeDef *phost)
     HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData; 
     HID_Handle->state = HID_ERROR;
     
-    /*Decode Bootclass Protocol: Mouse or Keyboard*/
+    /*Decode Bootclass Protocol: Mouse or Keyboard, or 0 for other */
     if(phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceProtocol == HID_KEYBRD_BOOT_CODE)
     {
       USBH_UsrLog ("KeyBoard device found!"); 
@@ -194,7 +194,7 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit (USBH_HandleTypeDef *phost)
       HID_Handle->poll = HID_MIN_POLL;
     }
     
-    /* Check fo available number of endpoints */
+    /* Check for available number of endpoints */
     /* Find the number of EPs in the Interface Descriptor */      
     /* Choose the lower number in order not to overrun the buffer allocated */
     max_ep = ( (phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bNumEndpoints <= USBH_MAX_NUM_ENDPOINTS) ? 
@@ -411,7 +411,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     
   case HID_POLL:
     
-    if(USBH_LL_GetURBState(phost , HID_Handle->InPipe) == USBH_URB_DONE)
+    if(USBH_LL_GetURBState(phost , HID_Handle->InPipe) == USBH_URB_DONE) // TODO: add to get report loop
     {
       if(HID_Handle->DataReady == 0)
       {
@@ -458,7 +458,7 @@ static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost)
   {
     if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll)
     {
-      HID_Handle->state = HID_GET_DATA;
+      HID_Handle->state = HID_GET_DATA;  // TODO: Send then get?
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_URB_EVENT, 0);
 #endif       
@@ -492,7 +492,7 @@ USBH_StatusTypeDef USBH_HID_GetHIDReportDescriptor (USBH_HandleTypeDef *phost,
   HID report descriptor parsing is not required.
   In case, for supporting Non-Boot Protocol devices and output reports,
   user may parse the report descriptor*/
-  
+  // TODO: Parse report descriptors here
   
   return status;
 }
@@ -640,7 +640,7 @@ USBH_StatusTypeDef USBH_HID_SetProtocol(USBH_HandleTypeDef *phost,
   * @param  buf: Buffer where the source descriptor is available
   * @retval None
   */
-static void  USBH_HID_ParseHIDDesc (HID_DescTypeDef *desc, uint8_t *buf)
+static void  USBH_HID_ParseHIDDesc (HID_DescTypeDef *desc, uint8_t *buf) // Class descriptor
 {
   
   desc->bLength                  = *(uint8_t  *) (buf + 0);
@@ -760,7 +760,7 @@ uint16_t  fifo_read(FIFO_TypeDef * f, void * buf, uint16_t  nbytes)
  
 /**
   * @brief  fifo_write
-  *         Read from FIFO.
+  *         Write to FIFO.
   * @param  f: Fifo address
   * @param  buf: read buffer 
   * @param  nbytes: number of item to write
