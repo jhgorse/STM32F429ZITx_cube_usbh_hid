@@ -235,7 +235,6 @@ USBH_StatusTypeDef  USBH_LL_Stop (USBH_HandleTypeDef *phost)
   */
 USBH_SpeedTypeDef USBH_LL_GetSpeed  (USBH_HandleTypeDef *phost)
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   USBH_SpeedTypeDef speed = USBH_SPEED_FULL;
     
   switch (HAL_HCD_GetCurrentSpeed(phost->pData))
@@ -256,6 +255,7 @@ USBH_SpeedTypeDef USBH_LL_GetSpeed  (USBH_HandleTypeDef *phost)
    speed = USBH_SPEED_FULL;    
     break;  
   }
+  USBH_DbgLog("%s:%d %s(%d)\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__, speed);
   return  speed;
 }
 
