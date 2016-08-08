@@ -60,9 +60,16 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id);
 void USBH_HID_EventCallback(USBH_HandleTypeDef *phost);
 
 void USBH_HID_EventCallback(USBH_HandleTypeDef *phost) {
-  HID_KEYBD_Info_TypeDef *kbdInfo;
-  kbdInfo = USBH_HID_GetKeybdInfo (phost);
-  printf ("Keyboard key: %c\n", USBH_HID_GetASCIICode(kbdInfo));
+//  HID_KEYBD_Info_TypeDef *kbdInfo;
+//  kbdInfo = USBH_HID_GetKeybdInfo (phost);
+
+//  printf ("Keyboard key: %c\n", USBH_HID_GetASCIICode(kbdInfo));
+  HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
+  printf("%s:%d %s() should have data if we get here\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+  for (int i=0; i < HID_Handle->length; i++)
+    printf ("%x ", HID_Handle->pData[i] ); // keybd_report_data[i]
+
+  printf("\n");
 }
 /* USER CODE END 1 */
 
