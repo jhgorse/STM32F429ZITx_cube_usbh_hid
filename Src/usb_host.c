@@ -92,7 +92,61 @@ void MX_USB_HOST_Process(void)
 {
 //  printf("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   /* USB Host Background task */
-    USBH_Process(&hUsbHostHS); 						
+  USBH_HandleTypeDef *phost = &hUsbHostHS;
+  HID_HandleTypeDef *HID_Handle = (HID_HandleTypeDef *) phost->pActiveClass->pData;
+  USBH_StatusTypeDef _status;
+  USBH_URBStateTypeDef _urbstatus;
+  uint8_t _buf[61];
+
+//  phost->Control.setup.b.bRequest = USB_HID_SET_REPORT
+  if (Appli_state == APPLICATION_READY && HID_Handle->state == HID_IDLE ) { //
+//    HID_Handle->state = HID_SEND_DATA;
+    memset (_buf, 0, sizeof(_buf));
+    _buf[0] = 2;
+//    _buf[1] = 1;
+
+    _status = USBH_FAIL;
+    while (_status != USBH_OK) { // 7 polls
+      _status = USBH_InterruptSendData(phost,
+                                      _buf,
+                                      sizeof(_buf),
+                                      HID_Handle->OutPipe);
+//      _status = USBH_HID_SetReport (phost,
+//                                    0, // Report type
+//                                    2,
+//                                    _buf,
+//                                    sizeof(_buf));
+      _urbstatus = USBH_LL_GetURBState( phost, HID_Handle->OutPipe);
+      if ( _urbstatus == USBH_URB_DONE )
+        break;
+    }
+    //printf ("Did we send it?\n"); // watch receiver
+
+    _status = USBH_FAIL;
+//    HID_Handle->state = HID_POLL;
+//    HID_Handle->timer = phost->Timer;
+//    HID_Handle->DataReady = 0;
+    USBH_LL_SetToggle (phost, HID_Handle->InPipe, 0);
+    while (_status != USBH_OK) { // 7 polls
+    _status = USBH_InterruptReceiveData( phost,
+                                      HID_Handle->pData,
+                                      HID_Handle->length,
+                                      HID_Handle->InPipe);
+//    _status = USBH_HID_GetReport (&hUsbHostHS,
+//                                  0, // Report type
+//                                  1,
+//                                  HID_Handle->pData,
+//                                  HID_Handle->length);
+    _urbstatus = USBH_LL_GetURBState( phost, HID_Handle->InPipe);
+    if ( _urbstatus == USBH_URB_DONE )
+            break;
+    }
+    HID_Handle->DataReady = 1;
+    printf ("Did we get it?\n"); // buffer
+
+  }
+
+  USBH_Process(&hUsbHostHS);
 }
 /*
  * user callbak definition
