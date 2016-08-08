@@ -50,10 +50,10 @@
 	MiddleWare version : 
 */
 /*----------   -----------*/
-#define USBH_MAX_NUM_ENDPOINTS      2 
+#define USBH_MAX_NUM_ENDPOINTS      4
  
 /*----------   -----------*/
-#define USBH_MAX_NUM_INTERFACES      2 
+#define USBH_MAX_NUM_INTERFACES      4
  
 /*----------   -----------*/
 #define USBH_MAX_NUM_CONFIGURATION      1 
