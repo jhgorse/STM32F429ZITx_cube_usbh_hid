@@ -447,11 +447,13 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 
   case HID_POLL_SEND:
 
-    if(USBH_LL_GetURBState(phost , HID_Handle->OutPipe) == USBH_URB_DONE)
+    urb_state = USBH_LL_GetURBState(phost , HID_Handle->OutPipe);
+
+    if(urb_state == USBH_URB_DONE)
     {
       HID_Handle->state = HID_SYNC;
     }
-    else if(USBH_LL_GetURBState(phost , HID_Handle->OutPipe) == USBH_URB_STALL) /* IN Endpoint Stalled */
+    else if(urb_state == USBH_URB_STALL || urb_state == USBH_URB_NOTREADY) /* IN Endpoint Stalled */
     {
       printf("HID_POLL_SEND stalled");
       /* Issue Clear Feature on interrupt IN endpoint */
@@ -476,9 +478,10 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     HID_Handle->DataReady = 0;
     break;
     
-  case HID_POLL_GET:
+  case HID_POLL_GET: // We should have data after this..
     
-    if(USBH_LL_GetURBState(phost, HID_Handle->InPipe) == USBH_URB_DONE)
+    urb_state = USBH_LL_GetURBState(phost, HID_Handle->InPipe);
+    if(urb_state == USBH_URB_DONE)
     {
       if(HID_Handle->DataReady == 0)
       {
@@ -490,7 +493,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 #endif          
       }
     }
-    else if(USBH_LL_GetURBState(phost , HID_Handle->InPipe) == USBH_URB_STALL) /* IN Endpoint Stalled */
+    else if(urb_state == USBH_URB_STALL) /* IN Endpoint Stalled */
     {
       printf("HID_POLL_GET stalled");
       /* Issue Clear Feature on interrupt IN endpoint */ 
