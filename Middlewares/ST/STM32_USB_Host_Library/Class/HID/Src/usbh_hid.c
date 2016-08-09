@@ -346,7 +346,7 @@ static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost)
     break; 
     
   case HID_REQ_SET_PROTOCOL:
-    /* set protocol */
+    /* set protocol */ // May not be necessary for non-boot devices
     if (USBH_HID_SetProtocol (phost, 0) == USBH_OK)
     {
       HID_Handle->ctl_state = HID_REQ_IDLE;
@@ -390,22 +390,27 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   USBH_StatusTypeDef status = USBH_OK;
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   USBH_URBStateTypeDef urb_state;
+  static uint8_t _buf[61];
   
   switch (HID_Handle->state)
   {
   case HID_INIT:
 //    HID_Handle->Init(phost);
+    memset (_buf, 0, sizeof(_buf));
+    _buf[0] = 2;
   case HID_IDLE:
-//    if(USBH_HID_GetReport (phost,
-//                           0x01, // Type
-//                            0,   // Id
-//                            HID_Handle->pData,
-//                            HID_Handle->length) == USBH_OK)
-//    {
+    if(USBH_HID_GetReport (phost,
+                           0x01, // Type
+                            0,   // Id
+                            HID_Handle->pData,
+                            HID_Handle->length) == USBH_OK)
+    {
+      printf("USBH_HID_GetReport(phost, type=0x1, Id=0, len=0x%x, HID_Handle->pData=0x%x 0x%x)\n",
+          HID_Handle->length,HID_Handle->pData[0],HID_Handle->pData[1]);
       
 //      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
       HID_Handle->state = HID_SYNC;
-//    }
+    }
     
     break;
     
@@ -414,13 +419,46 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     /* Sync with start of Even Frame */
     if(phost->Timer & 1)
     {
-      HID_Handle->state = HID_GET_DATA; 
+      HID_Handle->state = HID_SEND_DATA;
     }
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_URB_EVENT, 0);
 #endif   
     break;
     
+  case HID_SEND_DATA:
+
+    USBH_InterruptSendData(phost,
+                                    _buf,
+                                    sizeof(_buf),
+                                    HID_Handle->OutPipe);
+
+//    HID_Handle->timer = phost->Timer;
+//    HID_Handle->DataReady = 0;
+    HID_Handle->state = HID_POLL_SEND;
+    break;
+
+  case HID_POLL_SEND:
+
+    if(USBH_LL_GetURBState(phost , HID_Handle->OutPipe) == USBH_URB_DONE)
+    {
+      HID_Handle->state = HID_GET_DATA;
+    }
+    else if(USBH_LL_GetURBState(phost , HID_Handle->OutPipe) == USBH_URB_STALL) /* IN Endpoint Stalled */
+    {
+      printf("HID_POLL_SEND stalled");
+      /* Issue Clear Feature on interrupt IN endpoint */
+      if(USBH_ClrFeature(phost,
+                         HID_Handle->ep_addr) == USBH_OK)
+      {
+        /* Change state to issue next OUT token */
+        HID_Handle->state = HID_SYNC;
+      }
+    }
+
+
+    break;
+
   case HID_GET_DATA:
 
     USBH_InterruptReceiveData(phost, 
@@ -428,14 +466,14 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
                               HID_Handle->length,
                               HID_Handle->InPipe);
     
-    HID_Handle->state = HID_POLL;
+    HID_Handle->state = HID_POLL_GET;
     HID_Handle->timer = phost->Timer;
     HID_Handle->DataReady = 0;
     break;
     
-  case HID_POLL:
+  case HID_POLL_GET:
     
-    if(USBH_LL_GetURBState(phost , HID_Handle->InPipe) == USBH_URB_DONE) // TODO: add to get report loop
+    if(USBH_LL_GetURBState(phost, HID_Handle->InPipe) == USBH_URB_DONE)
     {
       if(HID_Handle->DataReady == 0)
       {
@@ -449,7 +487,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     }
     else if(USBH_LL_GetURBState(phost , HID_Handle->InPipe) == USBH_URB_STALL) /* IN Endpoint Stalled */
     {
-      
+      printf("HID_POLL_GET stalled");
       /* Issue Clear Feature on interrupt IN endpoint */ 
       if(USBH_ClrFeature(phost,
                          HID_Handle->ep_addr) == USBH_OK)
@@ -478,11 +516,11 @@ static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost)
 {
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   
-  if(HID_Handle->state == HID_POLL)
+  if(HID_Handle->state == HID_POLL_GET)
   {
     if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll)
     {
-      HID_Handle->state = HID_GET_DATA;  // TODO: Send then get?
+      HID_Handle->state = HID_SYNC;  // TODO: Send then get?
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_URB_EVENT, 0);
 #endif       
@@ -634,7 +672,7 @@ USBH_StatusTypeDef USBH_HID_GetReport (USBH_HandleTypeDef *phost,
 
 /**
   * @brief  USBH_Set_Protocol
-  *         Set protocol State.
+  *         Set protocol State. 7.2.6 HID
   * @param  phost: Host handle
   * @param  protocol : Set Protocol for HID : boot/report protocol
   * @retval USBH Status
@@ -649,7 +687,7 @@ USBH_StatusTypeDef USBH_HID_SetProtocol(USBH_HandleTypeDef *phost,
   
   
   phost->Control.setup.b.bRequest = USB_HID_SET_PROTOCOL;
-  phost->Control.setup.b.wValue.w = protocol != 0 ? 0 : 1;
+  phost->Control.setup.b.wValue.w = protocol != 0 ? 0 : 1; // 0 boot, 1 report
   phost->Control.setup.b.wIndex.w = 0;
   phost->Control.setup.b.wLength.w = 0;
   
