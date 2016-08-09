@@ -523,7 +523,7 @@ static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost)
   
   if(HID_Handle->state == HID_POLL_GET || HID_Handle->state == HID_POLL_SEND)
   {
-    if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll)
+    if(( phost->Timer - HID_Handle->timer) >= (HID_Handle->poll + 990))
     {
       HID_Handle->state = HID_SEND_DATA;  // TODO: Send then get?
 #if (USBH_USE_OS == 1)
