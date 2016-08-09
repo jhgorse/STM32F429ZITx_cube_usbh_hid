@@ -394,7 +394,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   switch (HID_Handle->state)
   {
   case HID_INIT:
-    HID_Handle->Init(phost); 
+//    HID_Handle->Init(phost);
   case HID_IDLE:
 //    if(USBH_HID_GetReport (phost,
 //                           0x01, // Type
