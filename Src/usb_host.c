@@ -59,12 +59,11 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id);
 /* USER CODE BEGIN 1 */
 void USBH_HID_EventCallback(USBH_HandleTypeDef *phost);
 
+// Called by USBH_HID_Process()
 void USBH_HID_EventCallback(USBH_HandleTypeDef *phost) {
-//  HID_KEYBD_Info_TypeDef *kbdInfo;
-//  kbdInfo = USBH_HID_GetKeybdInfo (phost);
-
-//  printf ("Keyboard key: %c\n", USBH_HID_GetASCIICode(kbdInfo));
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
+  HID_Handle->DataReady = 0;
+
   printf("%s:%d %s() should have data if we get here\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   for (int i=0; i < HID_Handle->length; i++)
     printf ("%x ", HID_Handle->pData[i] ); // keybd_report_data[i]
@@ -99,47 +98,31 @@ void MX_USB_HOST_Process(void)
   uint8_t _buf[61];
 
 //  phost->Control.setup.b.bRequest = USB_HID_SET_REPORT
-  if (Appli_state == APPLICATION_READY && HID_Handle->state == HID_IDLE ) { //
+  if (Appli_state == APPLICATION_READY && HID_Handle->state == HID_IDLE  && 0 ) { //
 //    HID_Handle->state = HID_SEND_DATA;
     memset (_buf, 0, sizeof(_buf));
     _buf[0] = 2;
 //    _buf[1] = 1;
 
     _status = USBH_FAIL;
-    while (_status != USBH_OK) { // 7 polls
-      _status = USBH_InterruptSendData(phost,
+
+    while (_urbstatus != USBH_URB_DONE) { // 7 polls
+      USBH_InterruptSendData(phost,
                                       _buf,
                                       sizeof(_buf),
                                       HID_Handle->OutPipe);
-//      _status = USBH_HID_SetReport (phost,
-//                                    0, // Report type
-//                                    2,
-//                                    _buf,
-//                                    sizeof(_buf));
       _urbstatus = USBH_LL_GetURBState( phost, HID_Handle->OutPipe);
-      if ( _urbstatus == USBH_URB_DONE )
-        break;
     }
     //printf ("Did we send it?\n"); // watch receiver
 
-    _status = USBH_FAIL;
-//    HID_Handle->state = HID_POLL;
-//    HID_Handle->timer = phost->Timer;
-//    HID_Handle->DataReady = 0;
+    _urbstatus = USBH_URB_IDLE;
     USBH_LL_SetToggle (phost, HID_Handle->InPipe, 0);
-    while (_status != USBH_OK) { // 7 polls
-    _status = USBH_InterruptReceiveData( phost,
+    while (_urbstatus != USBH_URB_DONE) { // 7 polls
+    USBH_InterruptReceiveData( phost,
                                       HID_Handle->pData,
                                       HID_Handle->length,
                                       HID_Handle->InPipe);
-//    _status = USBH_HID_GetReport (&hUsbHostHS,
-//                                  0, // Report type
-//                                  1,
-//                                  HID_Handle->pData,
-//                                  HID_Handle->length);
     _urbstatus = USBH_LL_GetURBState( phost, HID_Handle->InPipe);
-    if ( _urbstatus == USBH_URB_DONE )
-            break;
     }
     HID_Handle->DataReady = 1;
     printf ("Did we get it?\n"); // buffer
