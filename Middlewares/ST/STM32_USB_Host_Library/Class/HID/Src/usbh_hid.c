@@ -399,8 +399,9 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     memset (_buf, 0, sizeof(_buf));
     _buf[0] = 2;
   case HID_IDLE:
-    if(USBH_HID_GetReport (phost,
-                           0x01, // Type
+    // 7.2 Class-Specific Requests
+    if(USBH_HID_GetReport (phost, // 10100001 - D2H, CLASS REQ
+                           0x01, // Type 1 in, 2 out, 3 feature, ff res
                             0,   // Id
                             HID_Handle->pData,
                             HID_Handle->length) == USBH_OK)
