@@ -761,6 +761,11 @@ HAL_StatusTypeDef USB_EP0StartXfer(USB_OTG_GlobalTypeDef *USBx , USB_OTG_EPTypeD
   return HAL_OK;
 }
 
+#define _wl 1024
+uint32_t _wbuff[_wl];
+#define _rl 1024
+uint32_t _rbuff[_rl];
+
 /**
   * @brief  USB_WritePacket : Writes a packet into the Tx FIFO associated 
   *         with the EP/channel
@@ -778,14 +783,27 @@ HAL_StatusTypeDef USB_WritePacket(USB_OTG_GlobalTypeDef *USBx, uint8_t *src, uin
 {
   uint32_t count32b = 0U , i = 0U;
   
+  static uint32_t _wi = 0;
+  static uint32_t _wcnt = 0;
+
+  _wbuff[_wi] = ++_wcnt;
+  _wi = (_wi + 1) % _wl; // Increment or wrap
+
+  _wbuff[_wi] = (USBx_HOST->HFNUM & USB_OTG_HFNUM_FRNUM);
+  _wi = (_wi + 1) % _wl;
+
   if (dma == 0U)
   {
     count32b =  (len + 3U) / 4U;
     for (i = 0U; i < count32b; i++, src += 4U)
     {
       USBx_DFIFO(ch_ep_num) = *((__packed uint32_t *)src);
+      _wbuff[_wi] = *((__packed uint32_t *)src);
+      _wi = (_wi + 1) % _wl;
     }
   }
+  _wbuff[_wi] = _wcnt;
+  _wi = (_wi + 1) % _wl; // Increment or wrap
   return HAL_OK;
 }
 
@@ -807,11 +825,27 @@ void *USB_ReadPacket(USB_OTG_GlobalTypeDef *USBx, uint8_t *dest, uint16_t len)
   uint32_t i=0U;
   uint32_t count32b = (len + 3U) / 4U;
   
+  static uint32_t _ri = 0;
+  static uint32_t _rcnt = 0;
+
+  _rbuff[_ri] = ++_rcnt;
+  _ri = (_ri + 1) % _rl; // Increment or wrap
+
+  _rbuff[_ri] = (USBx_HOST->HFNUM & USB_OTG_HFNUM_FRNUM);
+  _ri = (_ri + 1) % _rl;
+
   for ( i = 0U; i < count32b; i++, dest += 4U )
   {
     *(__packed uint32_t *)dest = USBx_DFIFO(0U);
     
+    _rbuff[_ri] = *(__packed uint32_t *)dest;
+    _ri = (_ri + 1) % _rl;
+    // USBx + USB_OTG_FIFO_BASE + (i) * USB_OTG_FIFO_SIZE
+    // 0x40040000U + 0x1000U + 0U * 0x1000U = 0x40041000U
+    // USB_OTG_GlobalTypeDef
   }
+  _rbuff[_ri] = _rcnt;
+  _ri = (_ri + 1) % _rl; // Increment or wrap
   return ((void *)dest);
 }
 
