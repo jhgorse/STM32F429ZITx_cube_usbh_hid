@@ -42,6 +42,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbh_hid.h"
 #include "usbh_hid_parser.h"
+#include "stm32f4xx_hal_hcd.h"
 
 
 /** @addtogroup USBH_LIB
@@ -389,6 +390,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 
   USBH_StatusTypeDef status = USBH_OK;
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
+  HCD_HandleTypeDef *hhcd = phost->pData;
   USBH_URBStateTypeDef urb_state;
   static uint8_t _buf[61];
   
@@ -504,6 +506,11 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
         HID_Handle->state = HID_GET_DATA;
       }
     } 
+    else if (hhcd->hc[HID_Handle->InPipe].state == HC_NAK)
+    {
+      printf("GET NAK, try again\n");
+      HID_Handle->state = HID_SEND_DATA;
+    }
     
 
     break;
