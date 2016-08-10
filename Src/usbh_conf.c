@@ -398,6 +398,21 @@ USBH_StatusTypeDef   USBH_LL_SubmitURB  (USBH_HandleTypeDef *phost,
 USBH_URBStateTypeDef  USBH_LL_GetURBState (USBH_HandleTypeDef *phost, uint8_t pipe) 
 {
   usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+  HCD_HCStateTypeDef hc_state;
+  hc_state = HAL_HCD_HC_GetState(phost->pData, pipe);
+ /*            HC_XFRC/
+  *            HC_HALTED/
+  *            HC_NYET/
+  *            HC_NAK/
+  *            HC_STALL/
+  *            HC_XACTERR/
+  *            HC_BBLERR/
+  *            HC_DATATGLERR */
+//  if (hc_state == HC_NAK)
+//    printf ("NAK pipe 0x%x\n", pipe);
+  if (hc_state == HC_XACTERR)
+    printf ("HC_XACTERR pipe 0x%x\n", pipe);
+
   return (USBH_URBStateTypeDef)HAL_HCD_HC_GetURBState (phost->pData, pipe);
 }
 
