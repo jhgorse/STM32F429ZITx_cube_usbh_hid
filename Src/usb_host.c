@@ -62,13 +62,19 @@ void USBH_HID_EventCallback(USBH_HandleTypeDef *phost);
 // Called by USBH_HID_Process()
 void USBH_HID_EventCallback(USBH_HandleTypeDef *phost) {
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
+  static uint8_t _ecbuf[64];
+  uint16_t nbytes = 0;
+
   HID_Handle->DataReady = 0;
 
-  printf("%s:%d %s() should have data if we get here\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
-  for (int i=0; i < HID_Handle->length; i++)
-    printf ("%x ", HID_Handle->pData[i] ); // keybd_report_data[i]
-
-  printf("\n");
+  nbytes = fifo_read(&HID_Handle->fifo, _ecbuf, 64);
+  while (nbytes != 0) {
+    printf("%s:%d %s() dump %d bytes fifo data\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__,nbytes);
+    for (int i=0; i < nbytes; i++)
+      printf ("%x ", _ecbuf[i] );
+    printf("\n");
+    nbytes = fifo_read(&HID_Handle->fifo, _ecbuf, 64);
+  }
 }
 /* USER CODE END 1 */
 

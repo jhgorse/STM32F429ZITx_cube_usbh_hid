@@ -396,6 +396,8 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   {
   case HID_INIT:
 //    HID_Handle->Init(phost);
+    fifo_init(&HID_Handle->fifo, phost->device.Data, HID_QUEUE_SIZE * sizeof(_buf));
+
     memset (_buf, 0, sizeof(_buf));
     _buf[0] = 2;
     _buf[1] = 1;
@@ -411,7 +413,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
       printf("USBH_HID_GetReport(phost, type=0x1, Id=0, len=0x%x, HID_Handle->pData=0x%x 0x%x)\n",
           HID_Handle->length,HID_Handle->pData[0],HID_Handle->pData[1]);
       
-//      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
+      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
       HID_Handle->state = HID_SEND_DATA;
     }
     
@@ -469,8 +471,8 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   case HID_GET_DATA:
 
     USBH_InterruptReceiveData(phost, 
-                              _buf,
-                              sizeof(_buf),
+                              HID_Handle->pData,
+                              HID_Handle->length,
                               HID_Handle->InPipe);
     
     HID_Handle->state = HID_POLL_GET;
@@ -486,12 +488,9 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     {
       if(HID_Handle->DataReady == 0)
       {
-//        fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
+        fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
         HID_Handle->DataReady = 1;
         USBH_HID_EventCallback(phost);
-#if (USBH_USE_OS == 1)
-    osMessagePut ( phost->os_event, USBH_URB_EVENT, 0);
-#endif          
       }
     }
     else if(urb_state == USBH_URB_STALL) /* IN Endpoint Stalled */
