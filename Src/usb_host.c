@@ -65,23 +65,31 @@ void USBH_HID_EventCallback(USBH_HandleTypeDef *phost) {
   static uint8_t _ecbuf[64];
   uint16_t nbytes = 0;
 
-  HID_Handle->DataReady = 0;
+//  HID_Handle->DataReady = 0;
+//  if(HID_Handle->length == 0)
+//  {
+//    printf("%s:%d %s() HID_Handle->length == 0\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+//    return; // Failed
+//  }
+//
+//  nbytes = fifo_read(&HID_Handle->fifo, &_ecbuf, HID_Handle->length);
+//  if(nbytes ==  HID_Handle->length) {
+//    printf("%s:%d %s() dump %d bytes fifo data\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__,nbytes);
+//    for (int i=0; i < nbytes; i++)
+//      printf ("%x ", _ecbuf[i] );
+//    printf("\n");
+//    nbytes = fifo_read(&HID_Handle->fifo, _ecbuf, HID_Handle->length);
+//  }
 
-  nbytes = fifo_read(&HID_Handle->fifo, _ecbuf, 64);
-  while (nbytes != 0) {
-    printf("%s:%d %s() dump %d bytes fifo data\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__,nbytes);
-    for (int i=0; i < nbytes; i++)
-      printf ("%x ", _ecbuf[i] );
-    printf("\n");
-    nbytes = fifo_read(&HID_Handle->fifo, _ecbuf, 64);
-  }
+  // or use unint8_t USBH_HID_GetASCIICode(USBH_HID_GetKeybdInfo(phost))
+  printf("%s() keycode %c\n",__FUNCTION__,
+      USBH_HID_GetASCIICode(USBH_HID_GetKeybdInfo(phost)));
 }
 /* USER CODE END 1 */
 
 /* init function */				        
 void MX_USB_HOST_Init(void)
 {
-  printf("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   /* Init Host Library,Add Supported Class and Start the library*/
   USBH_Init(&hUsbHostHS, USBH_UserProcess, HOST_HS);
 
@@ -95,47 +103,8 @@ void MX_USB_HOST_Init(void)
 */ 
 void MX_USB_HOST_Process(void) 
 {
-//  printf("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   /* USB Host Background task */
-  USBH_HandleTypeDef *phost = &hUsbHostHS;
-  HID_HandleTypeDef *HID_Handle = (HID_HandleTypeDef *) phost->pActiveClass->pData;
-  USBH_StatusTypeDef _status;
-  USBH_URBStateTypeDef _urbstatus;
-  uint8_t _buf[61];
-
-//  phost->Control.setup.b.bRequest = USB_HID_SET_REPORT
-  if (Appli_state == APPLICATION_READY && HID_Handle->state == HID_IDLE  && 0 ) { //
-//    HID_Handle->state = HID_SEND_DATA;
-    memset (_buf, 0, sizeof(_buf));
-    _buf[0] = 2;
-//    _buf[1] = 1;
-
-    _status = USBH_FAIL;
-
-    while (_urbstatus != USBH_URB_DONE) { // 7 polls
-      USBH_InterruptSendData(phost,
-                                      _buf,
-                                      sizeof(_buf),
-                                      HID_Handle->OutPipe);
-      _urbstatus = USBH_LL_GetURBState( phost, HID_Handle->OutPipe);
-    }
-    //printf ("Did we send it?\n"); // watch receiver
-
-    _urbstatus = USBH_URB_IDLE;
-    USBH_LL_SetToggle (phost, HID_Handle->InPipe, 0);
-    while (_urbstatus != USBH_URB_DONE) { // 7 polls
-    USBH_InterruptReceiveData( phost,
-                                      HID_Handle->pData,
-                                      HID_Handle->length,
-                                      HID_Handle->InPipe);
-    _urbstatus = USBH_LL_GetURBState( phost, HID_Handle->InPipe);
-    }
-    HID_Handle->DataReady = 1;
-    printf ("Did we get it?\n"); // buffer
-
-  }
-
-  USBH_Process(&hUsbHostHS);
+    USBH_Process(&hUsbHostHS); 						
 }
 /*
  * user callbak definition

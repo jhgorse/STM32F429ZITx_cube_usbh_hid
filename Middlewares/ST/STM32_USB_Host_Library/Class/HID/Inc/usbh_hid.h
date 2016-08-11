@@ -113,11 +113,10 @@ typedef enum
   HID_INIT= 0,  
   HID_IDLE,
   HID_SEND_DATA,
-  HID_POLL_SEND,
   HID_BUSY,
   HID_GET_DATA,   
   HID_SYNC,     
-  HID_POLL_GET,
+  HID_POLL,
   HID_ERROR,
 }
 HID_StateTypeDef;
