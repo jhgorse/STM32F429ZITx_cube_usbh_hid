@@ -71,6 +71,10 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef* hcdHandle)
     __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
 
     /* Peripheral interrupt init */
+    HAL_NVIC_SetPriority(OTG_HS_EP1_OUT_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(OTG_HS_EP1_OUT_IRQn);
+    HAL_NVIC_SetPriority(OTG_HS_EP1_IN_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(OTG_HS_EP1_IN_IRQn);
     HAL_NVIC_SetPriority(OTG_HS_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
   /* USER CODE BEGIN USB_OTG_HS_MspInit 1 */
@@ -97,6 +101,10 @@ void HAL_HCD_MspDeInit(HCD_HandleTypeDef* hcdHandle)
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15);
 
     /* Peripheral interrupt Deinit*/
+    HAL_NVIC_DisableIRQ(OTG_HS_EP1_OUT_IRQn);
+
+    HAL_NVIC_DisableIRQ(OTG_HS_EP1_IN_IRQn);
+
     HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
 
   /* USER CODE BEGIN USB_OTG_HS_MspDeInit 1 */
