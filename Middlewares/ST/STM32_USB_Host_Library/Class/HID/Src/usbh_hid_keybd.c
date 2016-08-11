@@ -96,7 +96,7 @@ static USBH_StatusTypeDef USBH_HID_KeybdDecode(USBH_HandleTypeDef *phost);
 */
 
 HID_KEYBD_Info_TypeDef    keybd_info;
-uint8_t                   keybd_report_data[61];
+uint8_t                   keybd_report_data[2];
 
 
 #define HID_REPORT_DESCRIPTOR_SIZE 0x0044
@@ -375,12 +375,12 @@ USBH_StatusTypeDef USBH_HID_KeybdInit(USBH_HandleTypeDef *phost)
   uint32_t x;
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;  
     
-//  keybd_info.lctrl=keybd_info.lshift= 0;
-//  keybd_info.lalt=keybd_info.lgui= 0;
-//  keybd_info.rctrl=keybd_info.rshift= 0;
-//  keybd_info.ralt=keybd_info.rgui=0;
+  keybd_info.lctrl=keybd_info.lshift= 0;
+  keybd_info.lalt=keybd_info.lgui= 0;
+  keybd_info.rctrl=keybd_info.rshift= 0;
+  keybd_info.ralt=keybd_info.rgui=0;
   
-//  keybd_report_data[0] = 1;
+  keybd_report_data[0] = 1;
   for(x=2; x < sizeof(keybd_report_data); x++)
   {
     keybd_report_data[x] = 0;
@@ -391,7 +391,7 @@ USBH_StatusTypeDef USBH_HID_KeybdInit(USBH_HandleTypeDef *phost)
     HID_Handle->length = (sizeof(keybd_report_data));
   }
   HID_Handle->pData = (uint8_t*)keybd_report_data;
-  //fifo_init(&HID_Handle->fifo, phost->device.Data, HID_QUEUE_SIZE * sizeof(keybd_report_data));
+  fifo_init(&HID_Handle->fifo, phost->device.Data, HID_QUEUE_SIZE * sizeof(keybd_report_data));
   
   return USBH_OK;    
 }
