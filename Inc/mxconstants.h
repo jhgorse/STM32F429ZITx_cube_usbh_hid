@@ -41,6 +41,8 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define Heartbeat_Pin GPIO_PIN_1
+#define Heartbeat_GPIO_Port GPIOC
 #define USB_FS_ID_Pin GPIO_PIN_12
 #define USB_FS_ID_GPIO_Port GPIOB
 #define USB_HOST_DEV_Pin GPIO_PIN_7
