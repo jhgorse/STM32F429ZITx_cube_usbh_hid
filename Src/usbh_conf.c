@@ -399,7 +399,7 @@ USBH_URBStateTypeDef  USBH_LL_GetURBState (USBH_HandleTypeDef *phost, uint8_t pi
 {
   usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   HCD_HCStateTypeDef hc_state;
-  hc_state = HAL_HCD_HC_GetState(phost->pData, pipe);
+  hc_state = HAL_HCD_HC_GetState(phost->pData, pipe); // HC state
  /*            HC_XFRC/
   *            HC_HALTED/
   *            HC_NYET/
@@ -413,7 +413,7 @@ USBH_URBStateTypeDef  USBH_LL_GetURBState (USBH_HandleTypeDef *phost, uint8_t pi
   if (hc_state == HC_XACTERR)
     printf ("HC_XACTERR pipe 0x%x\n", pipe);
 
-  return (USBH_URBStateTypeDef)HAL_HCD_HC_GetURBState (phost->pData, pipe);
+  return (USBH_URBStateTypeDef)HAL_HCD_HC_GetURBState (phost->pData, pipe); // HC URB state
 }
 
 /**

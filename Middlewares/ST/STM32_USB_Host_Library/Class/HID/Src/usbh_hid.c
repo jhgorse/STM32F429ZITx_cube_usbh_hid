@@ -511,8 +511,6 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
       printf("GET NAK, try again\n");
       HID_Handle->state = HID_SEND_DATA;
     }
-    
-
     break;
     
   default:
@@ -531,7 +529,10 @@ static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost)
 {
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   
-  if(HID_Handle->state == HID_POLL_GET || HID_Handle->state == HID_POLL_SEND)
+  if(    HID_Handle->state == HID_POLL_GET
+      || HID_Handle->state == HID_POLL_SEND
+//      || HID_Handle->state == HID_IDLE
+      )
   {
     if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll)
     {
