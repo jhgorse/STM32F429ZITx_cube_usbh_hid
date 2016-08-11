@@ -352,14 +352,7 @@ static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost)
       /* all requests performed*/
       phost->pUser(phost, HOST_USER_CLASS_ACTIVE); 
       status = USBH_OK; 
-    } else // Report protocol
-    {
-      HID_Handle->ctl_state = HID_REQ_IDLE;
-      printf("USBH_HID_SetProtocol failed\n");
-      /* all requests performed*/
-      phost->pUser(phost, HOST_USER_CLASS_ACTIVE);
-      status = USBH_OK;
-    }
+    } 
     break;
     
   case HID_REQ_IDLE:
