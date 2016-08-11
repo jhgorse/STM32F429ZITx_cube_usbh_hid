@@ -397,8 +397,8 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   switch (HID_Handle->state)
   {
   case HID_INIT:
-//    HID_Handle->Init(phost);
-    fifo_init(&HID_Handle->fifo, phost->device.Data, HID_QUEUE_SIZE * sizeof(_buf));
+    HID_Handle->Init(phost);
+//    fifo_init(&HID_Handle->fifo, phost->device.Data, HID_QUEUE_SIZE * sizeof(_buf));
 
     memset (_buf, 0, sizeof(_buf));
     _buf[0] = 2;
@@ -416,7 +416,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
           HID_Handle->length,HID_Handle->pData[0],HID_Handle->pData[1]);
       
       fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
-      HID_Handle->state = HID_SEND_DATA;
+      HID_Handle->state = HID_SYNC;
     }
     
     break;
@@ -428,9 +428,6 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     {
       HID_Handle->state = HID_GET_DATA;
     }
-#if (USBH_USE_OS == 1)
-    osMessagePut ( phost->os_event, USBH_URB_EVENT, 0);
-#endif   
     break;
     
   case HID_SEND_DATA:
@@ -508,8 +505,8 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     } 
     else if (hhcd->hc[HID_Handle->InPipe].state == HC_NAK)
     {
-      printf("GET NAK, try again\n");
-      HID_Handle->state = HID_SEND_DATA;
+//      printf("GET NAK, try again\n");
+//      HID_Handle->state = HID_SEND_DATA;
     }
     break;
     
@@ -530,13 +527,13 @@ static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost)
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   
   if(    HID_Handle->state == HID_POLL_GET
-      || HID_Handle->state == HID_POLL_SEND
+//      || HID_Handle->state == HID_POLL_SEND
 //      || HID_Handle->state == HID_IDLE
       )
   {
     if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll)
     {
-      HID_Handle->state = HID_SEND_DATA;  // TODO: Send then get?
+      HID_Handle->state = HID_SYNC;  // TODO: Send then get?
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_URB_EVENT, 0);
 #endif       
