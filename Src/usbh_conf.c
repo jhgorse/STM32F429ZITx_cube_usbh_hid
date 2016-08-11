@@ -130,7 +130,6 @@ void HAL_HCD_SOF_Callback(HCD_HandleTypeDef *hhcd)
   */
 void HAL_HCD_Connect_Callback(HCD_HandleTypeDef *hhcd)
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   USBH_LL_Connect(hhcd->pData);
 }
 
@@ -141,7 +140,6 @@ void HAL_HCD_Connect_Callback(HCD_HandleTypeDef *hhcd)
   */
 void HAL_HCD_Disconnect_Callback(HCD_HandleTypeDef *hhcd)
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   USBH_LL_Disconnect(hhcd->pData);
 } 
 
@@ -152,7 +150,6 @@ void HAL_HCD_Disconnect_Callback(HCD_HandleTypeDef *hhcd)
   */
 void HAL_HCD_HC_NotifyURBChange_Callback(HCD_HandleTypeDef *hhcd, uint8_t chnum, HCD_URBStateTypeDef urb_state)
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   /* To be used with OS to sync URB state with the global state machine */
 #if (USBH_USE_OS == 1)   
   USBH_LL_NotifyURBChange(hhcd->pData);
@@ -169,7 +166,6 @@ void HAL_HCD_HC_NotifyURBChange_Callback(HCD_HandleTypeDef *hhcd, uint8_t chnum,
   */
 USBH_StatusTypeDef  USBH_LL_Init (USBH_HandleTypeDef *phost)
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   /* Init USB_IP */
   if (phost->id == HOST_HS) {
   /* Link The driver to the stack */
@@ -204,7 +200,6 @@ USBH_StatusTypeDef  USBH_LL_Init (USBH_HandleTypeDef *phost)
   */
 USBH_StatusTypeDef  USBH_LL_DeInit (USBH_HandleTypeDef *phost)
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   HAL_HCD_DeInit(phost->pData);
   return USBH_OK; 
 }
@@ -217,7 +212,6 @@ USBH_StatusTypeDef  USBH_LL_DeInit (USBH_HandleTypeDef *phost)
   */
 USBH_StatusTypeDef  USBH_LL_Start(USBH_HandleTypeDef *phost)
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   HAL_HCD_Start(phost->pData);
   return USBH_OK; 
 }
@@ -230,7 +224,6 @@ USBH_StatusTypeDef  USBH_LL_Start(USBH_HandleTypeDef *phost)
   */
 USBH_StatusTypeDef  USBH_LL_Stop (USBH_HandleTypeDef *phost)
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   HAL_HCD_Stop(phost->pData);
   return USBH_OK; 
 }
@@ -263,7 +256,6 @@ USBH_SpeedTypeDef USBH_LL_GetSpeed  (USBH_HandleTypeDef *phost)
    speed = USBH_SPEED_FULL;    
     break;  
   }
-  USBH_DbgLog("%s:%d %s(%d)\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__, speed);
   return  speed;
 }
 
@@ -275,7 +267,6 @@ USBH_SpeedTypeDef USBH_LL_GetSpeed  (USBH_HandleTypeDef *phost)
   */
 USBH_StatusTypeDef USBH_LL_ResetPort (USBH_HandleTypeDef *phost) 
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   HAL_HCD_ResetPort(phost->pData);
   return USBH_OK; 
 }
@@ -289,7 +280,6 @@ USBH_StatusTypeDef USBH_LL_ResetPort (USBH_HandleTypeDef *phost)
   */
 uint32_t USBH_LL_GetLastXferSize  (USBH_HandleTypeDef *phost, uint8_t pipe)  
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   return HAL_HCD_HC_GetXferCount(phost->pData, pipe);
 }
 
@@ -313,7 +303,6 @@ USBH_StatusTypeDef   USBH_LL_OpenPipe    (USBH_HandleTypeDef *phost,
                                       uint8_t ep_type,
                                       uint16_t mps)
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   HAL_HCD_HC_Init(phost->pData,
                   pipe_num,
                   epnum,
@@ -333,7 +322,6 @@ USBH_StatusTypeDef   USBH_LL_OpenPipe    (USBH_HandleTypeDef *phost,
   */
 USBH_StatusTypeDef   USBH_LL_ClosePipe   (USBH_HandleTypeDef *phost, uint8_t pipe)   
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   HAL_HCD_HC_Halt(phost->pData, pipe);
   return USBH_OK; 
 }
@@ -376,7 +364,6 @@ USBH_StatusTypeDef   USBH_LL_SubmitURB  (USBH_HandleTypeDef *phost,
                                             uint16_t length,
                                             uint8_t do_ping ) 
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   HAL_HCD_HC_SubmitRequest (phost->pData,
                             pipe, 
                             direction ,
@@ -405,9 +392,6 @@ USBH_StatusTypeDef   USBH_LL_SubmitURB  (USBH_HandleTypeDef *phost,
   */
 USBH_URBStateTypeDef  USBH_LL_GetURBState (USBH_HandleTypeDef *phost, uint8_t pipe) 
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
-  HCD_HCStateTypeDef hc_state;
-  hc_state = HAL_HCD_HC_GetState(phost->pData, pipe); // HC state
  /*            HC_XFRC/
   *            HC_HALTED/
   *            HC_NYET/
@@ -416,12 +400,7 @@ USBH_URBStateTypeDef  USBH_LL_GetURBState (USBH_HandleTypeDef *phost, uint8_t pi
   *            HC_XACTERR/
   *            HC_BBLERR/
   *            HC_DATATGLERR */
-//  if (hc_state == HC_NAK)
-//    printf ("NAK pipe 0x%x\n", pipe);
-  if (hc_state == HC_XACTERR)
-    printf ("HC_XACTERR pipe 0x%x\n", pipe);
-
-  return (USBH_URBStateTypeDef)HAL_HCD_HC_GetURBState (phost->pData, pipe); // HC URB state
+  return (USBH_URBStateTypeDef)HAL_HCD_HC_GetURBState (phost->pData, pipe);
 }
 
 /**
@@ -436,7 +415,6 @@ USBH_URBStateTypeDef  USBH_LL_GetURBState (USBH_HandleTypeDef *phost, uint8_t pi
   */
 USBH_StatusTypeDef  USBH_LL_DriverVBUS (USBH_HandleTypeDef *phost, uint8_t state)
 { 
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
 
   /* USER CODE BEGIN 0 */
   /* USER CODE END 0*/     
@@ -474,7 +452,6 @@ USBH_StatusTypeDef  USBH_LL_DriverVBUS (USBH_HandleTypeDef *phost, uint8_t state
   */
 USBH_StatusTypeDef   USBH_LL_SetToggle   (USBH_HandleTypeDef *phost, uint8_t pipe, uint8_t toggle)   
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   HCD_HandleTypeDef *pHandle;
   pHandle = phost->pData;
   
@@ -499,7 +476,6 @@ USBH_StatusTypeDef   USBH_LL_SetToggle   (USBH_HandleTypeDef *phost, uint8_t pip
   */
 uint8_t  USBH_LL_GetToggle   (USBH_HandleTypeDef *phost, uint8_t pipe)   
 {
-  usbh_DEBUG("%s:%d %s()\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
   uint8_t toggle = 0;
   HCD_HandleTypeDef *pHandle;
   pHandle = phost->pData; 

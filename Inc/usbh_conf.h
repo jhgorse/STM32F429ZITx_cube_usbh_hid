@@ -50,10 +50,10 @@
 	MiddleWare version : 
 */
 /*----------   -----------*/
-#define USBH_MAX_NUM_ENDPOINTS      4
+#define USBH_MAX_NUM_ENDPOINTS      4 
  
 /*----------   -----------*/
-#define USBH_MAX_NUM_INTERFACES      4
+#define USBH_MAX_NUM_INTERFACES      2 
  
 /*----------   -----------*/
 #define USBH_MAX_NUM_CONFIGURATION      1 
@@ -71,7 +71,7 @@
 #define USBH_MAX_DATA_BUFFER      512 
  
 /*----------   -----------*/
-#define USBH_DEBUG_LEVEL      3
+#define USBH_DEBUG_LEVEL      3 
  
 /*----------   -----------*/
 #define USBH_USE_OS      0 
@@ -126,13 +126,7 @@
 #else
 #define USBH_DbgLog(...)                         
 #endif
-
-#if (USBH_DEBUG_LEVEL > 3)
-#define  usbh_DEBUG(...)    printf(__VA_ARGS__);
-#else
-#define usbh_DEBUG(...)
-#endif
-
+                            
 /**
   * @}
   */ 
