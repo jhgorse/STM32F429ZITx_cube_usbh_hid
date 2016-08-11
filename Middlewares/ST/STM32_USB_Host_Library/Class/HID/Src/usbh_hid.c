@@ -392,7 +392,8 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   HCD_HandleTypeDef *hhcd = phost->pData;
   USBH_URBStateTypeDef urb_state;
-  static uint8_t _buf[61];
+  uint8_t *dest;
+  static uint8_t _buf[64];
   
   switch (HID_Handle->state)
   {
@@ -403,55 +404,70 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     memset (_buf, 0, sizeof(_buf));
     _buf[0] = 2;
     _buf[1] = 1;
-    HID_Handle->state = HID_IDLE;
+    HID_Handle->state = HID_GET_DATA;
+    break;
+
   case HID_IDLE:
     // 7.2 Class-Specific Requests
-    if(USBH_HID_GetReport (phost, // 10100001 - D2H, CLASS REQ
-                           0x01, // Type 1 in, 2 out, 3 feature, ff res
-                            0,   // Id
-                            HID_Handle->pData,
-                            HID_Handle->length) == USBH_OK)
-    {
-      printf("USBH_HID_GetReport(phost, type=0x1, Id=0, len=0x%x, HID_Handle->pData=0x%x 0x%x)\n",
-          HID_Handle->length,HID_Handle->pData[0],HID_Handle->pData[1]);
-      
-      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
-      HID_Handle->state = HID_SEND_DATA;
-    }
-    
+//    if(USBH_HID_GetReport (phost, // 10100001 - D2H, CLASS REQ
+//                           0x01, // Type 1 in, 2 out, 3 feature, ff res
+//                            0,   // Id
+//                            HID_Handle->pData,
+//                            HID_Handle->length) == USBH_OK)
+//    {
+//      printf("USBH_HID_GetReport(phost, type=0x1, Id=0, len=0x%x, HID_Handle->pData=0x%x 0x%x)\n",
+//          HID_Handle->length,HID_Handle->pData[0],HID_Handle->pData[1]);
+//
+//      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
+//      HID_Handle->state = HID_IDLE;
+//    }
+//
+    // TODO: Check for errors, do resets
     break;
-    
-  case HID_SYNC:
 
-    /* Sync with start of Even Frame */
-    if(phost->Timer & 1)
-    {
-      HID_Handle->state = HID_GET_DATA;
-    }
-#if (USBH_USE_OS == 1)
-    osMessagePut ( phost->os_event, USBH_URB_EVENT, 0);
-#endif   
-    break;
-    
   case HID_SEND_DATA:
 //    memset (HID_Handle->pData, 0, HID_Handle->length);
 //    HID_Handle->pData[0] = 2; // Read only? Doesn't work
 //    HID_Handle->pData[1] = 1;
 
 
-    USBH_InterruptSendData(phost,
-                                    _buf,
-                                    sizeof(_buf),
-                                    HID_Handle->OutPipe);
+//#define USBx_INEP(i)    ((USB_OTG_INEndpointTypeDef *)((uint32_t)USBx + USB_OTG_IN_ENDPOINT_BASE + (i)*USB_OTG_EP_REG_SIZE))
+//#define USBx_OUTEP(i)   ((USB_OTG_OUTEndpointTypeDef *)((uint32_t)USBx + USB_OTG_OUT_ENDPOINT_BASE + (i)*USB_OTG_EP_REG_SIZE))
+//#define USBx_DFIFO(i)   *(__IO uint32_t *)((uint32_t)USBx + USB_OTG_FIFO_BASE + (i) * USB_OTG_FIFO_SIZE)
+//
+//#define USBx_HOST       ((USB_OTG_HostTypeDef *)((uint32_t )USBx + USB_OTG_HOST_BASE))
+//#define USBx_HC(i)      ((USB_OTG_HostChannelTypeDef *)((uint32_t)USBx + USB_OTG_HOST_CHANNEL_BASE + (i)*USB_OTG_HOST_CHANNEL_SIZE))
 
-    HID_Handle->state = HID_POLL_SEND;
+    // Seems to put stuff into the tx fifo
+    USB_WritePacket(USB_OTG_HS,
+        (uint8_t *)_buf, // data
+        1,    // ch_ep_num
+        64,   // Length
+        0);   // DMA
+
+    // Also seems to get the raw data to tx fifo
+    USBH_InterruptSendData(phost,
+                          _buf,
+                          sizeof(_buf),
+                          HID_Handle->OutPipe);
+
+    // Something totally different, executes, but fails to perform intended function
+    if (USBH_HID_SetReport (phost, // H2D, CLASS REQ
+         0x02, // Type 1 in, 2 out, 3 feature, ff res
+         1,    // Id
+         _buf,
+         sizeof(_buf)) == USBH_OK)
+    {
+      HID_Handle->state = HID_SYNC;
+    }
+
 //    HID_Handle->timer = phost->Timer;
 //    HID_Handle->DataReady = 0;
     break;
 
   case HID_POLL_SEND:
 
-    urb_state = USBH_LL_GetURBState(phost , HID_Handle->OutPipe);
+    urb_state = USBH_LL_GetURBState(phost, HID_Handle->OutPipe);
 
     if(urb_state == USBH_URB_DONE)
     {
@@ -465,21 +481,58 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
                          HID_Handle->ep_addr) == USBH_OK)
       {
         /* Change state to issue next OUT token */
-        HID_Handle->state = HID_SEND_DATA;
+        HID_Handle->state = HID_IDLE;
       }
     }
     break;
 
-  case HID_GET_DATA:
+  case HID_SYNC:
+    if(phost->Timer & 1)     /* Sync with start of Even Frame */
+    {
+      HID_Handle->state = HID_GET_DATA;
+    }
+    break;
 
-    USBH_InterruptReceiveData(phost, 
-                              HID_Handle->pData,
-                              HID_Handle->length,
-                              HID_Handle->InPipe);
+  case HID_GET_DATA:
+    // *,1 fail
+    // *,2-3 pData=0x8 0x1B
+    //
+    if(USBH_HID_GetReport (phost, // 10100001 - D2H, CLASS REQ
+                           0x02, // Type 1 in, 2 out, 3 feature, ff res
+                           0x0,   // Id
+                            HID_Handle->pData,
+                            HID_Handle->length) == USBH_OK)
+    {
+      printf("USBH_HID_GetReport(phost, type=0x1, Id=0, len=0x%x, HID_Handle->pData=0x%x 0x%x)\n",
+          HID_Handle->length,HID_Handle->pData[0],HID_Handle->pData[1]);
+
+      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
+      HID_Handle->state = HID_IDLE;
+    }
+
+//    // Interrupt Read, never works
+//    USBH_InterruptReceiveData(phost,
+//        HID_Handle->pData,
+//        HID_Handle->length,
+//        HID_Handle->InPipe);
+//    HID_Handle->state = HID_POLL_GET;
+//
+//    // Direct read fifo, does nothing
+//    dest = USB_ReadPacket(USB_OTG_HS,
+//        HID_Handle->pData,      // dest buffer
+//        HID_Handle->length);    // Length
+//
+//    if (dest != NULL) {
+//
+//      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
+//      HID_Handle->DataReady = 1;
+//      USBH_HID_EventCallback(phost);
+//
+//      HID_Handle->timer = phost->Timer;
+//      HID_Handle->DataReady = 0;
+//      HID_Handle->state = HID_IDLE;
+//    }
     
-    HID_Handle->state = HID_POLL_GET;
-    HID_Handle->timer = phost->Timer;
-    HID_Handle->DataReady = 0;
     break;
     
   case HID_POLL_GET: // We should have data after this..
@@ -494,6 +547,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
         HID_Handle->DataReady = 1;
         USBH_HID_EventCallback(phost);
       }
+      HID_Handle->state = HID_IDLE;
     }
     else if(urb_state == USBH_URB_STALL) /* IN Endpoint Stalled */
     {
@@ -503,13 +557,13 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
                          HID_Handle->ep_addr) == USBH_OK)
       {
         /* Change state to issue next IN token */
-        HID_Handle->state = HID_GET_DATA;
+        HID_Handle->state = HID_IDLE;
       }
     } 
     else if (hhcd->hc[HID_Handle->InPipe].state == HC_NAK)
     {
-      printf("GET NAK, try again\n");
-      HID_Handle->state = HID_SEND_DATA;
+//      printf("GET NAK, try again\n");
+//      HID_Handle->state = HID_IDLE;
     }
     break;
     
@@ -529,17 +583,15 @@ static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost)
 {
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   
-  if(    HID_Handle->state == HID_POLL_GET
-      || HID_Handle->state == HID_POLL_SEND
-//      || HID_Handle->state == HID_IDLE
+  if(
+//      HID_Handle->state == HID_POLL_GET
+//      || HID_Handle->state == HID_POLL_SEND
+      HID_Handle->state == HID_IDLE
       )
   {
-    if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll)
+    if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll+90)
     {
-      HID_Handle->state = HID_SEND_DATA;  // TODO: Send then get?
-#if (USBH_USE_OS == 1)
-    osMessagePut ( phost->os_event, USBH_URB_EVENT, 0);
-#endif       
+      HID_Handle->state = HID_GET_DATA;
     }
   }
   return USBH_OK;
