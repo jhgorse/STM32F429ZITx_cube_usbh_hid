@@ -344,8 +344,15 @@ static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost)
     break; 
     
   case HID_REQ_SET_PROTOCOL:
-    /* set protocol */ // May not be necessary for non-boot devices
-    if (USBH_HID_SetProtocol (phost, 0) == USBH_OK)
+    /* set protocol */
+    // Not necessary for non-boot devices
+    if(phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceProtocol  == 0)
+    {
+      HID_Handle->ctl_state = HID_REQ_IDLE;
+      phost->pUser(phost, HOST_USER_CLASS_ACTIVE);
+      status = USBH_OK;
+    }
+    else if (USBH_HID_SetProtocol (phost, 0) == USBH_OK)
     {
       HID_Handle->ctl_state = HID_REQ_IDLE;
       
