@@ -94,8 +94,8 @@ USBH_StatusTypeDef USBH_HID_CustomInit(USBH_HandleTypeDef *phost)
 
   // manually adjust HID_Handle settings as necessary
   // set min polling time in ms
-  if (HID_Handle->poll < 100)
-    HID_Handle->poll = 100;
+  if (HID_Handle->poll < 110)
+    HID_Handle->poll = 110;
   
   // set length in bytes
   if(HID_Handle->length >= (sizeof(custom_report_data)))
