@@ -37,6 +37,7 @@
 #include "usbh_core.h"
 #include "usbh_hid_mouse.h"
 #include "usbh_hid_keybd.h"
+#include "usbh_class_hid_custom.h"
  
 /** @addtogroup USBH_LIB
   * @{

@@ -176,7 +176,7 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit (USBH_HandleTypeDef *phost)
     else if(phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceProtocol  == 0) // Other
     {
       USBH_UsrLog ("Other device found! Assigning keyboard");
-      HID_Handle->Init =  USBH_HID_KeybdInit;
+      HID_Handle->Init =  USBH_HID_CustomInit;
     }
     else
     {
