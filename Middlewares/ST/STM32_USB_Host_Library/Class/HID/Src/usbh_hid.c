@@ -382,31 +382,61 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   HCD_HandleTypeDef *hhcd = phost->pData;
   USBH_URBStateTypeDef urb_state;
+  static uint8_t _buf[61];
   
   switch (HID_Handle->state)
   {
   case HID_INIT:
     HID_Handle->Init(phost); 
-    HID_Handle->state = HID_IDLE;
-  case HID_IDLE:
-    // 7.2 Class-Specific Requests
-    if(USBH_HID_GetReport (phost, // 10100001 - D2H, CLASS REQ
-                           0x01, // Type 1 in, 2 out, 3 feature, ff res
-                            0,   // Id
-                            HID_Handle->pData,
-                            HID_Handle->length) == USBH_OK)
+    memset (_buf, 0, sizeof(_buf));
+    _buf[0] = 2;
+    _buf[1] = 1;
+    HID_Handle->state = HID_SEND_SYNC;
+  case HID_SEND_SYNC:
+    /* Sync with start of Odd Frame */
+    if(phost->Timer & 1)
     {
-      
-      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);  
-      HID_Handle->state = HID_SYNC;
+      HID_Handle->state = HID_SEND_DATA;
     }
+    break;
+
+  case HID_SEND_DATA:
+    USBH_InterruptSendData(phost,
+                              _buf,
+                              sizeof(_buf),
+                              HID_Handle->OutPipe);
     
+    HID_Handle->state = HID_SEND_DATA_POLL;
+    HID_Handle->timer = phost->Timer;
+    HID_Handle->DataReady = 0;
     break;
     
+  case HID_SEND_DATA_POLL:
+
+    urb_state = USBH_LL_GetURBState(phost, HID_Handle->OutPipe);
+    if(urb_state == USBH_URB_DONE)
+    {
+      if(HID_Handle->DataReady == 0)
+      {
+        HID_Handle->state = HID_SYNC;
+      }
+    }
+    else if(urb_state == USBH_URB_STALL) /* OUT Endpoint Stalled */
+    {
+      /* Issue Clear Feature on interrupt OUT endpoint */
+      if(USBH_ClrFeature(phost,
+                         HID_Handle->OutEp) == USBH_OK)
+      {
+        /* Change state to issue next IN token */
+        HID_Handle->state = HID_GET_DATA;
+      }
+    }
+    break;
+
   case HID_SYNC:
 
-    /* Sync with start of Even Frame */
-    if(phost->Timer & 1)
+    /* Sync with start of Odd Frame */
+    if(phost->Timer & 2)
     {
       HID_Handle->state = HID_GET_DATA; 
     }
@@ -427,7 +457,6 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   case HID_POLL:
     
     urb_state = USBH_LL_GetURBState(phost, HID_Handle->InPipe);
-
     if(urb_state == USBH_URB_DONE)
     {
       if(HID_Handle->DataReady == 0)
@@ -447,9 +476,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
         /* Change state to issue next IN token */
         HID_Handle->state = HID_GET_DATA;
       }
-    } 
-    
-
+    }
     break;
     
   default:
@@ -468,11 +495,11 @@ static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost)
 {
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   
-  if(HID_Handle->state == HID_POLL)
+  if(HID_Handle->state == HID_POLL) // || HID_Handle->state == HID_SEND_DATA_POLL
   {
     if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll)
     {
-      HID_Handle->state = HID_GET_DATA;
+      HID_Handle->state = HID_SEND_SYNC;
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_URB_EVENT, 0);
 #endif       

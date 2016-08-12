@@ -113,7 +113,9 @@ typedef enum
 {
   HID_INIT= 0,  
   HID_IDLE,
+  HID_SEND_SYNC,
   HID_SEND_DATA,
+  HID_SEND_DATA_POLL,
   HID_BUSY,
   HID_GET_DATA,   
   HID_SYNC,     
