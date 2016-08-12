@@ -417,6 +417,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     if(urb_state == USBH_URB_DONE)
     {
       HID_Handle->state = HID_SYNC;
+      hhcd->hc[HID_Handle->OutPipe].toggle_out = 1^hhcd->hc[HID_Handle->OutPipe].toggle_out;
     }
     else if(urb_state == USBH_URB_STALL) /* OUT Endpoint Stalled */
     {
@@ -462,6 +463,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
         HID_Handle->DataReady = 1;
         USBH_HID_EventCallback(phost);
       }
+      hhcd->hc[HID_Handle->InPipe].toggle_in = 1^hhcd->hc[HID_Handle->InPipe].toggle_in;
     }
     else if(urb_state == USBH_URB_STALL) /* IN Endpoint Stalled */
     {
