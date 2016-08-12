@@ -416,10 +416,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     urb_state = USBH_LL_GetURBState(phost, HID_Handle->OutPipe);
     if(urb_state == USBH_URB_DONE)
     {
-      if(HID_Handle->DataReady == 0)
-      {
-        HID_Handle->state = HID_SYNC;
-      }
+      HID_Handle->state = HID_SYNC;
     }
     else if(urb_state == USBH_URB_STALL) /* OUT Endpoint Stalled */
     {
