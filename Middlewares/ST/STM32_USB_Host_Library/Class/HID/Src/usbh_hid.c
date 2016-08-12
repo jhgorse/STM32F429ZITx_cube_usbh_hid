@@ -389,39 +389,39 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
     HID_Handle->Init(phost); 
     HID_Handle->state = HID_IDLE;
   case HID_IDLE:
-    // 7.2 Class-Specific Requests
-    if(USBH_HID_GetReport (phost, // 10100001 - D2H, CLASS REQ
-                           0x01, // Type 1 in, 2 out, 3 feature, ff res
-                            0,   // Id
-                            HID_Handle->pData,
-                            HID_Handle->length) == USBH_OK)
-    {
-      
-      fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);  
-      HID_Handle->state = HID_SYNC;
-    }
-    
+
     break;
-    
+
   case HID_SYNC:
 
     /* Sync with start of Even Frame */
     if(phost->Timer & 1)
     {
-      HID_Handle->state = HID_GET_DATA; 
+      HID_Handle->state = HID_GET_DATA;
     }
     break;
-    
+
   case HID_GET_DATA:
 
-    USBH_InterruptReceiveData(phost, 
-                              HID_Handle->pData,
-                              HID_Handle->length,
-                              HID_Handle->InPipe);
-    
-    HID_Handle->state = HID_POLL;
-    HID_Handle->timer = phost->Timer;
-    HID_Handle->DataReady = 0;
+    // 7.2 Class-Specific Requests
+    //  Class D2H bRequest 0x01 wValue 0x0100 wLength 2 (words, 8 bytes)
+    //  SETUP txn: A1 01 00 01 00 00 02 00
+    //  bRequest GET_REPORT wValue Report Type << 8 | ID
+    //    wValue.w = (reportType << 8 ) | reportId
+    if(USBH_HID_GetReport (phost, // 10100001 - D2H, CLASS REQ
+                           0x00, // Type 1 in, 2 out, 3 feature, ff res
+                           0x01, // Id
+                           HID_Handle->pData,
+                           HID_Handle->length) == USBH_OK)
+    {
+      if(HID_Handle->DataReady == 0)
+      {
+        fifo_write(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
+        HID_Handle->DataReady = 1;
+        USBH_HID_EventCallback(phost);
+      }
+      HID_Handle->state = HID_IDLE;
+    }
     break;
     
   case HID_POLL:
@@ -468,7 +468,7 @@ static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost)
 {
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   
-  if(HID_Handle->state == HID_POLL)
+  if(HID_Handle->state == HID_IDLE)
   {
     if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll)
     {
