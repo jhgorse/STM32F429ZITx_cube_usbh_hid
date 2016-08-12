@@ -65,25 +65,25 @@ void USBH_HID_EventCallback(USBH_HandleTypeDef *phost) {
   static uint8_t _ecbuf[64];
   uint16_t nbytes = 0;
 
-//  HID_Handle->DataReady = 0;
-//  if(HID_Handle->length == 0)
-//  {
-//    printf("%s:%d %s() HID_Handle->length == 0\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
-//    return; // Failed
-//  }
-//
-//  nbytes = fifo_read(&HID_Handle->fifo, &_ecbuf, HID_Handle->length);
-//  if(nbytes ==  HID_Handle->length) {
-//    printf("%s:%d %s() dump %d bytes fifo data\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__,nbytes);
-//    for (int i=0; i < nbytes; i++)
-//      printf ("%x ", _ecbuf[i] );
-//    printf("\n");
-//    nbytes = fifo_read(&HID_Handle->fifo, _ecbuf, HID_Handle->length);
-//  }
+  HID_Handle->DataReady = 0;
+  if(HID_Handle->length == 0)
+  {
+    printf("%s:%d %s() HID_Handle->length == 0\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__);
+    return; // Failed
+  }
+
+  nbytes = fifo_read(&HID_Handle->fifo, &_ecbuf, HID_Handle->length);
+  while (nbytes !=  0) {
+    printf("%s:%d %s() dump %d bytes fifo data\n", (uint8_t *)__FILE__, __LINE__, __FUNCTION__,nbytes);
+    for (int i=0; i < nbytes; i++)
+      printf ("%x ", _ecbuf[i] );
+    printf("\n");
+    nbytes = fifo_read(&HID_Handle->fifo, _ecbuf, HID_Handle->length);
+  }
 
   // or use unint8_t USBH_HID_GetASCIICode(USBH_HID_GetKeybdInfo(phost))
-  printf("%s() keycode %c\n",__FUNCTION__,
-      USBH_HID_GetASCIICode(USBH_HID_GetKeybdInfo(phost)));
+//  printf("%s() keycode %c\n",__FUNCTION__,
+//      USBH_HID_GetASCIICode(USBH_HID_GetKeybdInfo(phost)));
 }
 /* USER CODE END 1 */
 
