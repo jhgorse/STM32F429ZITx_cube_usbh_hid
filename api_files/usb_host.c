@@ -97,7 +97,7 @@ void USBH_HID_EventCallback(USBH_HandleTypeDef *phost) {
 			}
 			DevID[9] = '\0';
 			printf (" RawTemp %03x RawIrradianceA %04x  RawIrradianceB %04x  RawADC %04x  DevID %s \n",
-					RawTemp, RawIrradianceA, RawIrradianceB, RawADC, DevID);
+					(int)RawTemp, (int)RawIrradianceA, (int)RawIrradianceB, (int)RawADC, (char *)DevID);
 			for (int i=0; i < 13; i++) {
 				printf ("%x ", _ecbuf[i] );
 			}
