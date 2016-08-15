@@ -49,7 +49,20 @@ typedef enum {
   USBH_DISCONNECT,
 }USBHStateTypeDef;
 
-extern USBHStateTypeDef usbh_app_state;
+struct USBHAppData {
+  USBHStateTypeDef state;
+  uint32_t ReportType;    // Pages 1-3
+  uint32_t SensorType;    // 1 Irradiance, 2 Temperature
+  uint32_t RawTemp;
+  uint32_t RawIrradianceA;
+  uint32_t RawIrradianceB;
+  uint32_t RawADC;
+  uint32_t FWVersion;
+  char     DevID[10];
+};
+extern struct USBHAppData usbh_data;
+
+//extern USBHStateTypeDef usbh_app_state;
 		
 void MX_USB_HOST_Init(void);
 void MX_USB_HOST_Process(void);

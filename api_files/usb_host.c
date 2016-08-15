@@ -41,7 +41,7 @@
 
 /* USB Host Core handle declaration */
 USBH_HandleTypeDef hUsbHostHS;
-USBHStateTypeDef usbh_app_state = USBH_IDLE;
+struct USBHAppData usbh_data;
 
 /**
 * -- Insert your variables declaration here --
@@ -67,7 +67,6 @@ void USBH_HID_EventCallback(USBH_HandleTypeDef *phost) {
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   static uint8_t _ecbuf[64];
   uint16_t nbytes = 0;
-  uint32_t ReportType,SensorType,RawTemp,RawIrradianceA,RawIrradianceB,RawADC,FWVersion;
   char DevID[10];
   DevID[9] = '\0';
 
@@ -81,23 +80,23 @@ void USBH_HID_EventCallback(USBH_HandleTypeDef *phost) {
   nbytes = fifo_read(&HID_Handle->fifo, &_ecbuf, HID_Handle->length);
   while (nbytes !=  0) {
 //    USBH_DbgLog("%s:%d %s() dump %d bytes fifo data", (uint8_t *)__FILE__, __LINE__, __FUNCTION__,nbytes);
-  	ReportType = _ecbuf[1];
-		SensorType = _ecbuf[2];
-		if (ReportType == 1) { // Page 1 of 3 of report data
-			RawTemp 			 = _ecbuf[3] * 0x100 + _ecbuf[4];
-			RawIrradianceA = _ecbuf[5] * 0x100 + _ecbuf[6];
-			RawIrradianceB = _ecbuf[7] * 0x100 + _ecbuf[8];
-			RawADC				 = _ecbuf[9] * 0x100 + _ecbuf[10];
+    usbh_data.ReportType = _ecbuf[1];
+    usbh_data.SensorType = _ecbuf[2];
+		if (usbh_data.ReportType == 1) { // Page 1 of 3 of report data
+			usbh_data.RawTemp 			 = _ecbuf[3] * 0x100 + _ecbuf[4];
+			usbh_data.RawIrradianceA = _ecbuf[5] * 0x100 + _ecbuf[6];
+			usbh_data.RawIrradianceB = _ecbuf[7] * 0x100 + _ecbuf[8];
+			usbh_data.RawADC				 = _ecbuf[9] * 0x100 + _ecbuf[10];
 			// 11 12 FWVersion
-			FWVersion = _ecbuf[11] * 0x100 + _ecbuf[12];
+			usbh_data.FWVersion = _ecbuf[11] * 0x100 + _ecbuf[12];
 			// 13-21 DevID
 			for (int i=13; i < 22; i++) {
-				DevID[i-13] = _ecbuf[i];
+			  usbh_data.DevID[i-13] = _ecbuf[i];
 //				printf ("%c", _ecbuf[i] );
 			}
 			DevID[9] = '\0';
 			printf (" RawTemp %03x RawIrradianceA %04x  RawIrradianceB %04x  RawADC %04x  DevID %s \n",
-					(int)RawTemp, (int)RawIrradianceA, (int)RawIrradianceB, (int)RawADC, (char *)DevID);
+					(int)usbh_data.RawTemp, (int)usbh_data.RawIrradianceA, (int)usbh_data.RawIrradianceB, (int)usbh_data.RawADC, (char *)usbh_data.DevID);
 			for (int i=0; i < 13; i++) {
 				printf ("%x ", _ecbuf[i] );
 			}
@@ -207,12 +206,12 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
   break;
     
   case HOST_USER_DISCONNECTION:
-    usbh_app_state = USBH_DISCONNECT;
+    usbh_data.state = USBH_DISCONNECT;
     USBH_DbgLog("HOST_USER_DISCONNECTION -> USBH_DISCONNECT\n");
   break;
     
   case HOST_USER_CLASS_ACTIVE:
-    usbh_app_state = USBH_READY;
+    usbh_data.state = USBH_READY;
     USBH_DbgLog("HOST_USER_CLASS_ACTIVE -> USBH_READY\n");
   break;
 
@@ -221,7 +220,7 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
   break;
 
   case HOST_USER_CONNECTION:
-    usbh_app_state = USBH_START;
+    usbh_data.state = USBH_START;
     USBH_DbgLog("HOST_USER_CONNECTION -> USBH_START\n");
   break;
 
