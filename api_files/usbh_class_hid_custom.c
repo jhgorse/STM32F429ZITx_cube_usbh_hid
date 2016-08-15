@@ -80,7 +80,6 @@ const hid_report_descriptor HIDREPORTDESC = {
   */
 USBH_StatusTypeDef USBH_HID_CustomInit(USBH_HandleTypeDef *phost)
 {
-  uint32_t x;
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;  
     
   // init report data
@@ -118,8 +117,6 @@ USBH_StatusTypeDef USBH_HID_CustomInit(USBH_HandleTypeDef *phost)
   */
 uint8_t *USBH_HID_CustomData(USBH_HandleTypeDef *phost)
 {
-  uint8_t x;
-  
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
   if(HID_Handle->length == 0)
   {

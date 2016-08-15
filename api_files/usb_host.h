@@ -43,11 +43,13 @@
 #include "stm32f4xx_hal.h"
 
 typedef enum {
-  APPLICATION_IDLE = 0,  
-  APPLICATION_START,   
-  APPLICATION_READY,
-  APPLICATION_DISCONNECT,
-}ApplicationTypeDef;
+  USBH_IDLE = 0,
+  USBH_START,
+  USBH_READY,
+  USBH_DISCONNECT,
+}USBHStateTypeDef;
+
+extern USBHStateTypeDef usbh_app_state;
 		
 void MX_USB_HOST_Init(void);
 void MX_USB_HOST_Process(void);
